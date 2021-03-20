@@ -1,14 +1,15 @@
-
 output "timestamp" {
-  value = local.time
+  description = "Formatted timestamp"
+  value       = local.time
 }
 
 output "arns" {
-  value = aws_instance.myec2[*].arn
+  description = "Arns of the created ec2 instances"
+  value       = aws_instance.myec2[*].arn
 }
 
 output "aws_pem_key_file" {
-  value     = var.aws_pem_key_name
-  sensitive = true
+  description = "Sensitive variable not displayed in the terminal"
+  value       = var.aws_pem_key_name
+  sensitive   = true
 }
-

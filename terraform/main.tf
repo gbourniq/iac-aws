@@ -16,13 +16,11 @@ data "aws_ami" "app_ami" {
 
 locals {
   time = formatdate("DD MMM YYYY hh:mm ZZZ", timestamp())
-}
-
-locals {
   common_tags = {
     Owner         = "DevOps Team"
     Service       = "backend"
     LastUpdatedAt = local.time
+    "Debug"       = var.debug
   }
 }
 
@@ -30,7 +28,7 @@ resource "aws_instance" "myec2" {
   ami                    = data.aws_ami.app_ami.id
   key_name               = var.aws_pem_key_name
   instance_type          = lookup(var.instance_type, terraform.workspace, "t2.micro")
-  count                  = terraform.workspace == "default" ? 1 : 0
+  count                  = var.environment == "dev" ? 1 : 0
   vpc_security_group_ids = [aws_security_group.dynamicsg.id]
   tags                   = local.common_tags
 
@@ -49,7 +47,7 @@ resource "aws_instance" "myec2" {
   }
 
   provisioner "local-exec" {
-    command = "echo ${self.private_ip} - ${element(var.elb_names, count.index)} - ${local.time} >> provisioning.log"
+    command = "echo ${self.private_ip} - ${element(var.instance_names, count.index)} - ${local.time} >> provisioning.log"
   }
 }
 

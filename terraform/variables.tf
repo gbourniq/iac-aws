@@ -1,26 +1,25 @@
-variable "instancetype" {
-  description = "The type of the EC2 instance."
-  default     = "t2.micro"
-}
-
 variable "debug" {
-  type = bool
+  type        = bool
+  description = "placeholder"
 }
 
 variable "aws_pem_key_file" {
-  type = string
+  type        = string
+  description = "placeholder"
 }
 
 variable "aws_pem_key_name" {
-  type = string
+  type        = string
+  description = "placeholder"
 }
 
-variable "github_ssh_key" {
-  type = string
-}
+# variable "github_ssh_key" {
+#   type = string
+# }
 
-variable "elb_names" {
-  type = list(string)
+variable "instance_names" {
+  type        = list(string)
+  description = "placeholder"
 }
 
 variable "sg_ports" {
@@ -30,8 +29,9 @@ variable "sg_ports" {
 }
 
 variable "environment" {
-  type    = string
-  default = "dev"
+  type        = string
+  description = "placeholder"
+  default     = "dev"
 
   validation {
     condition     = can(regex("^(dev|prod)$", var.environment))
@@ -39,19 +39,14 @@ variable "environment" {
   }
 }
 
-variable "instance_count" {
-  type = map(any)
-  default = {
-    "dev"  = 1
-    "prod" = 2
-  }
+variable "vpn_ip" {
+  type        = string
+  description = "your IP address for ssh access"
 }
 
-variable "vpn_ip" {}
-
 variable "instance_type" {
-  type = map(string)
-
+  type        = map(string)
+  description = "placeholder"
   default = {
     default = "t2.micro"
     dev     = "t2.micro"
