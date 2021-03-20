@@ -1,0 +1,54 @@
+[
+  {
+    "ParameterKey": "EC2HomeDirectory",
+    "ParameterValue": "/home/ec2-user/"
+  },
+  {
+    "ParameterKey": "CondaVersion",
+    "ParameterValue": "4.8.3"
+  },
+  {
+    "ParameterKey": "PythonVersion",
+    "ParameterValue": "3.7"
+  },
+  {
+    "ParameterKey": "PoetryVersion",
+    "ParameterValue": "0.12.17"
+  },
+  {
+    "ParameterKey": "GithubSSHKey",
+    "ParameterValue": "github_ssh_private_key"
+  },
+  {
+    "ParameterKey": "RepositoryName",
+    "ParameterValue": "fastapi-test"
+  },
+  {
+    "ParameterKey": "BranchName",
+    "ParameterValue": "master"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "t2.micro"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "personal_key_pair"
+  },
+  {
+    "ParameterKey": "VolumeSize",
+    "ParameterValue": "20"
+  },
+  {
+    "ParameterKey": "S3BucketName",
+    "ParameterValue": "cf-templates-10gg34q658sj6-eu-west-2"
+  },
+  {
+    "ParameterKey": "S3FilePathCloudWatchConfig",
+    "ParameterValue": "files/cloud_watch_config.json"
+  },
+  {
+    "ParameterKey": "S3FilePathEC2ScriptToRun",
+    "ParameterValue": "files/ec2_run_script.sh"
+  }
+]

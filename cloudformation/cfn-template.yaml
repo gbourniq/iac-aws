@@ -1,0 +1,349 @@
+---
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Environment Variables"
+        Parameters:
+          - EC2HomeDirectory
+          - CondaVersion
+          - PythonVersion
+          - PoetryVersion
+          - GithubSSHKey
+          - RepositoryName
+          - BranchName
+      - Label:
+          default: "Amazon EC2 Configuration"
+        Parameters:
+          - InstanceType
+          - LatestLinuxAmiId
+          - KeyName
+          - VolumeSize
+          - S3BucketName
+
+Parameters:
+  EC2HomeDirectory:
+    Description: Path to EC2 home user directory
+    Type: String
+    AllowedValues:
+      - "/home/ec2-user/"
+      - "/home/ubuntu"
+
+  CondaVersion:
+    Description: Conda Version
+    Type: String
+    AllowedValues:
+      - "4.8.3"
+
+  PythonVersion:
+    Description: Python Version
+    Type: String
+    AllowedValues:
+      - "3.7"
+      - "3.8"
+
+  PoetryVersion:
+    Description: Poetry Version
+    Type: String
+    AllowedValues:
+      - "0.12.17"
+      - "1.0.10"
+
+  GithubSSHKey:
+    Description: Parameter Name for the Github SSH key, stored in AWS Parameter Store
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /EC2/GITHUB_SSH_KEY
+
+  RepositoryName:
+    Description: Name of the repository containing scripts to run
+    Type: String
+    AllowedValues:
+      - portfolio
+      - fastapi-test
+
+  BranchName:
+    Description: Repository branch
+    Type: String
+    AllowedValues:
+      - master
+
+  InstanceType:
+    Description: EC2 instance type (has default, AllowedValues)
+    Type: String
+    AllowedValues:
+      - t2.micro
+      - t2.xlarge
+
+  LatestLinuxAmiId:
+    Description: Latest AMI for amazon linux 2
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  VolumeSize:
+    Description: Volume size mounted to EC2
+    Type: Number
+    MinValue: 10
+    MaxValue: 200
+
+  S3BucketName:
+    Description: Name of S3 Bucket containing files to download
+    Type: String
+    AllowedValues:
+      - "cf-templates-10gg34q658sj6-eu-west-2"
+
+  S3FilePathCloudWatchConfig:
+    Description: S3 file path for the CloudWatch config file
+    Type: String
+    AllowedValues:
+      - "files/cloud_watch_config.json"
+
+  S3FilePathEC2ScriptToRun:
+    Description: S3 file path for the bash script to run on EC2
+    Type: String
+    AllowedValues:
+      - "files/ec2_run_script.sh"
+
+Resources:
+
+  RootRole:
+    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: 'sts:AssumeRole'
+            Principal:
+              Service: ec2.amazonaws.com
+            Effect: Allow
+            Sid: ''
+      Policies:
+        # Policy for EC2 to download objects from private S3 bucket
+        - PolicyName: AuthenticatedS3GetObjects
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                Resource: !Sub 'arn:aws:s3:::${S3BucketName}*'
+                Effect: Allow
+        # Policy to allow EC2 to interact with the CloudWatch service
+        - PolicyName: CloudWatchAgentServerPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 'ssm:GetParameter'
+                Resource: 'arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*'
+                Effect: Allow
+              - Action:
+                  - 'cloudwatch:PutMetricData'
+                  - 'ec2:DescribeVolumes'
+                  - 'ec2:DescribeTags'
+                  - 'logs:PutLogEvents'
+                  - 'logs:DescribeLogStreams'
+                  - 'logs:DescribeLogGroups'
+                  - 'logs:CreateLogStream'
+                  - 'logs:CreateLogGroup'
+                Resource: '*'
+                Effect: Allow
+
+  RootInstanceProfile:
+    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-instanceprofile.html
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref RootRole
+
+  SSHSecurityGroup:
+    # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+
+  ServerSecurityGroup:
+    # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: allow connections from specified CIDR ranges
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 192.168.1.1/32
+
+  MyEC2Instance:
+    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-instance.html
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      ImageId: !Ref LatestLinuxAmiId
+      IamInstanceProfile: !Ref RootInstanceProfile
+      SecurityGroupIds:
+        - !Ref SSHSecurityGroup
+        - !Ref ServerSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp2
+            VolumeSize: !Ref VolumeSize
+            DeleteOnTermination: true
+            Encrypted: true
+      UserData:
+        Fn::Base64:
+          Fn::Sub:
+            - |
+              #!/bin/bash -xe
+
+              # Define helper functions
+              function cfn_fail
+              {
+                echo "$1" 1>&2
+                /opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackId} --resource MyEC2Instance --region ${AWS::Region}
+                exit 1
+              }
+              function cfn_success
+              {
+                echo "$1" 1>&2
+                /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackId} --resource MyEC2Instance --region ${AWS::Region}
+                exit 0
+              }
+
+              # Download
+              yum update -y
+              # Get the latest CloudFormation package
+              yum update -y aws-cfn-bootstrap
+
+              # Start cfn-init
+              /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource MyEC2Instance --configsets InstallAndRun --region ${AWS::Region} || cfn_fail "[ERROR] Oops something went wrong with cfn-init!";
+
+              # Export environment variables used in ec2_run_script.sh
+              export REPOSITORY_NAME=${RepositoryName}
+              export BRANCH_NAME=${BranchName}
+
+              # Run script as ${EC2User}
+              su ${EC2User} ${EC2HomeDirectory}/ec2_run_script.sh || cfn_fail "[ERROR] Oops something went wrong with the script!"
+
+              # Export logs to S3
+              aws s3 cp /var/log/cloud-init-output.log s3://${S3BucketName}/logs/ec2_logs_$(date +%F_%T).log
+
+              # Notify success back to CloudFormation
+              cfn_success "[SUCCESS] Both the cfn-init steps and the script run successfully!"
+            # Split should return, for eg. ["", "home", "ec2-user", ""]
+            - EC2User: !Select [2, !Split ["/", !Sub "${EC2HomeDirectory}"]]
+
+    Metadata:
+      Comment: Define cfn-init
+      AWS::CloudFormation::Authentication:
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-authentication.html
+        S3AccessCreds:
+          type: S3
+          buckets:
+            - !Sub ${S3BucketName}
+          roleName:
+            Ref: RootRole
+      AWS::CloudFormation::Init:
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html
+        configSets:
+          InstallAndRun:
+            - InstallCloudWatchAgent
+            - InstallMiniconda
+            - InstallPoetry
+            - CloneRepository
+            - DownloadEC2Script
+            - ChangeHomeDirPermissions
+        InstallCloudWatchAgent:
+          commands:
+            01_install_cw_agent:
+              command: |
+                wget https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm \
+                && sudo rpm -U ./amazon-cloudwatch-agent.rpm
+            02_download_cw_config_file:
+              command: !Sub |
+                aws s3 cp s3://${S3BucketName}/${S3FilePathCloudWatchConfig} config.json
+              cwd: /opt/aws/amazon-cloudwatch-agent/bin/
+            03_create_missing_files:
+              command: |
+                sudo mkdir -p /usr/share/collectd \
+                && sudo touch /usr/share/collectd/types.db
+            04_run_cw_agent:
+              command: |
+                sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+                  -a fetch-config \
+                  -m ec2 \
+                  -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+        InstallMiniconda:
+          commands:
+            01_wget_installer:
+              command: !Sub "wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py$(echo ${PythonVersion} | tr -d '.')_${CondaVersion}-Linux-x86_64.sh -O /tmp/miniconda.sh"
+            02_run_installer:
+              command: !Sub "bash /tmp/miniconda.sh -b -p ${EC2HomeDirectory}/miniconda3/"
+            03_conda_shell_setup:
+              command: !Sub "echo '. ${EC2HomeDirectory}/miniconda3/etc/profile.d/conda.sh' >> ${EC2HomeDirectory}/.bashrc"
+            04_install_python:
+              command: !Sub "source ${EC2HomeDirectory}/.bashrc && conda install -c miniconda python=${PythonVersion} -y"
+        InstallPoetry:
+          commands:
+            01_wget_installer:
+              command: "curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py -o /tmp/get-poetry.py"
+            02_run_installer:
+              command: !Sub |
+                source ${EC2HomeDirectory}/.bashrc \
+                && conda activate base \
+                && POETRY_HOME=${EC2HomeDirectory}/.poetry/ python /tmp/get-poetry.py --version ${PoetryVersion} -y
+            03_poetry_shell_setup:
+              command: !Sub "echo 'export PATH=${EC2HomeDirectory}/.poetry/bin:$PATH' >> ${EC2HomeDirectory}/.bashrc"
+            04_poetry_config:
+              command: !Sub "source ${EC2HomeDirectory}/.bashrc && poetry config settings.virtualenvs.create false"
+        CloneRepository:
+          packages:
+            yum:
+              git: []
+          files:
+            "/root/.ssh/id_rsa":
+              content:
+                !Sub |
+                  ${GithubSSHKey}
+              mode: "000400"
+              owner: "root"
+              group: "root"
+          commands:
+            01_git_clone_repository:
+              command: !Sub |
+                eval `ssh-agent` \
+                && ssh-add /root/.ssh/id_rsa \
+                && ssh-keygen -F github.com || ssh-keyscan github.com >> /root/.ssh/known_hosts \
+                && cd ${EC2HomeDirectory} \
+                && git clone git@github.com:gbourniq/${RepositoryName}.git
+        DownloadEC2Script:
+          commands:
+            01_download_script_from_s3:
+              command: !Sub |
+                aws s3 cp s3://${S3BucketName}/${S3FilePathEC2ScriptToRun} ${EC2HomeDirectory}/ec2_run_script.sh
+        ChangeHomeDirPermissions:
+          commands:
+            01_change_permissions:
+              command: !Sub
+                - "chown ${EC2User}:${EC2User} -R ${EC2HomeDirectory}"
+                # Split should return, for eg. ["", "home", "ec2-user", ""]
+                - EC2User: !Select [2, !Split ["/", !Sub "${EC2HomeDirectory}"]]
