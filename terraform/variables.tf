@@ -13,7 +13,7 @@ variable "aws_pem_key_name" {
   description = "placeholder"
 }
 
-# variable "github_ssh_key" {
+# variable "github_ssh_key_file" {
 #   type = string
 # }
 

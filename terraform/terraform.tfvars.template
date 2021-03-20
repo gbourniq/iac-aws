@@ -1,0 +1,7 @@
+instance_names = ["instance-a", "instance-b", "instance-c"]
+github_ssh_key_file = "<path_to_github_ssh_key_file>"
+aws_pem_key_file = "<path_to_pem_key_file>"
+aws_pem_key_name = "<pem_key_name>"
+debug            = "true"
+vpn_ip           = "<your_local_ip_for_ssh_access>/32"
+environment      = "dev"
