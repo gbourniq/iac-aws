@@ -1,5 +1,4 @@
 provider "aws" {
-  # alias   = "default"
   region  = "eu-west-2"
   profile = "myaws"
 }
@@ -20,94 +19,35 @@ locals {
     Owner         = "DevOps Team"
     Service       = "backend"
     LastUpdatedAt = local.time
-    "Debug"       = var.debug
   }
 }
 
-resource "aws_instance" "myec2" {
+module "myec2instance" {
+  source                 = "./modules/ec2"
+  count                  = var.instance_count
   ami                    = data.aws_ami.app_ami.id
   key_name               = var.aws_pem_key_name
-  instance_type          = lookup(var.instance_type, terraform.workspace, "t2.micro")
-  count                  = var.environment == "dev" ? 1 : 0
-  vpc_security_group_ids = [aws_security_group.dynamicsg.id]
+  instance_type          = lookup(var.instance_type, var.environment, "t2.micro")
+  iam_instance_profile   = var.iam_instance_profile
+  vpc_security_group_ids = [module.aws_security_group.id]
   tags                   = local.common_tags
-
-  provisioner "remote-exec" {
-    on_failure = fail
-    inline = [
-      "sudo yum -y install nano"
-    ]
-  }
-
-  connection {
-    type        = "ssh"
-    user        = "ec2-user"
-    private_key = file(var.aws_pem_key_file)
-    host        = self.public_ip
-  }
-
-  provisioner "local-exec" {
-    command = "echo ${self.private_ip} - ${element(var.instance_names, count.index)} - ${local.time} >> provisioning.log"
-  }
 }
 
-resource "aws_s3_bucket" "mys3" {
-  bucket = "s3-bucket-created-from-tf"
+module "aws_security_group" {
+  source   = "./modules/sg"
+  sg_ports = var.sg_ports
+  tags     = local.common_tags
+  vpn_ip   = var.vpn_ip
 }
 
-resource "aws_security_group" "dynamicsg" {
-  name        = "dynamic-sg"
-  description = "Ingress for Vault"
+# Official ec2 module from Terraform public registry
+module "ec2_cluster" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+  version = "~> 2.0"
 
-  dynamic "ingress" {
-    for_each = var.sg_ports
-    iterator = port
-    content {
-      from_port   = port.value
-      to_port     = port.value
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  }
-  ingress {
-    description = "SSH access"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.vpn_ip]
-  }
-  egress {
-    description = "Outbound Allowed"
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
+  name           = "my-cluster"
+  instance_count = var.use_official_module == "true" ? 1 : 0
+  ami            = data.aws_ami.app_ami.id
+  instance_type  = lookup(var.instance_type, terraform.workspace, "t2.micro")
+  tags           = local.common_tags
 }
-
-# put all the above into the internal ec2 module
-# module "ec2module" {
-#   source        = "./modules/ec2"
-#   image_id      = data.aws_ami.app_ami.id
-#   instance_type = lookup(var.instance_type, terraform.workspace, "t2.micro")
-# }
-
-# use a public official for dummy s3 bucket 
-# module "ec2_cluster" {
-#   # https://registry.terraform.io/
-#   source  = "terraform-aws-modules/ec2-instance/aws"
-#   version = "~> 2.0"
-
-#   name           = "my-cluster"
-#   instance_count = 1
-
-#   ami           = "ami-0d6621c01e8c2de2c"
-#   instance_type = "t2.micro"
-#   subnet_id     = "subnet-4dbfb206"
-
-#   tags = {
-#     Terraform   = "true"
-#     Environment = "dev"
-#   }
-# }

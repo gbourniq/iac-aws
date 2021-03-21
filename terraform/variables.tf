@@ -1,31 +1,15 @@
-variable "debug" {
+variable "use_official_module" {
   type        = bool
   description = "placeholder"
+  default     = false
 }
 
-variable "aws_pem_key_file" {
-  type        = string
-  description = "placeholder"
-}
 
-variable "aws_pem_key_name" {
-  type        = string
-  description = "placeholder"
-}
-
-# variable "github_ssh_key_file" {
-#   type = string
-# }
-
-variable "instance_names" {
-  type        = list(string)
-  description = "placeholder"
-}
-
-variable "sg_ports" {
-  type        = list(number)
-  description = "list of ingress ports"
-  default     = [80, 443]
+# EC2
+variable "instance_count" {
+  description = "Number of instances to launch."
+  type        = number
+  default     = 1
 }
 
 variable "environment" {
@@ -39,17 +23,41 @@ variable "environment" {
   }
 }
 
+variable "instance_type" {
+  type        = map(string)
+  description = "A map to compute the instance type to launch based on the environment"
+  default = {
+    dev  = "t2.micro"
+    prod = "t2.large"
+  }
+}
+
+variable "aws_pem_key_name" {
+  description = "The key name to use for the instance."
+  type        = string
+  default     = ""
+}
+
+variable "iam_instance_profile" {
+  description = "The IAM Instance Profile to launch the instance with. Specified as the name of the Instance Profile."
+  type        = string
+  default     = ""
+}
+
+# variable "github_ssh_key_file" {
+#   type = string
+# }
+
+
+# Security Groups
+variable "sg_ports" {
+  type        = list(number)
+  description = "list of ingress ports"
+  default     = [80, 443]
+}
+
 variable "vpn_ip" {
   type        = string
   description = "your IP address for ssh access"
-}
-
-variable "instance_type" {
-  type        = map(string)
-  description = "placeholder"
-  default = {
-    default = "t2.micro"
-    dev     = "t2.micro"
-    prd     = "t2.large"
-  }
+  default     = null
 }
