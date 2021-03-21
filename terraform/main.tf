@@ -4,6 +4,7 @@ provider "aws" {
 }
 
 data "aws_ami" "app_ami" {
+  # Get the latest Amazon Linux 2 AMI
   most_recent = true
   owners      = ["amazon"]
 
@@ -16,13 +17,14 @@ data "aws_ami" "app_ami" {
 locals {
   time = formatdate("DD MMM YYYY hh:mm ZZZ", timestamp())
   common_tags = {
-    Owner         = "DevOps Team"
-    Service       = "backend"
+    Name          = var.tag_name
     LastUpdatedAt = local.time
   }
 }
 
-module "aws_security_group" {
+module "mysecuritygroups" {
+  # Call internal module to create security groups
+  # Internal module allows to hardcode variables such as the VPN IP range
   source   = "./modules/sg"
   sg_ports = var.sg_ports
   tags     = local.common_tags
@@ -30,35 +32,35 @@ module "aws_security_group" {
 }
 
 module "myec2instances" {
+  # Call internal module to create ec2 instances
+  # Internal module allows to hardcode variables such as a hardened company AMI ID
   source                 = "./modules/ec2"
   count                  = var.instance_count
   ami                    = data.aws_ami.app_ami.id
   key_name               = var.aws_pem_key_name
-  instance_type          = lookup(var.instance_type, var.environment, "t2.micro")
+  instance_type          = lookup(var.instance_type, var.environment, null)
   iam_instance_profile   = var.iam_instance_profile
-  vpc_security_group_ids = [module.aws_security_group.id]
+  vpc_security_group_ids = [module.mysecuritygroups.dynamic_sg_id, module.mysecuritygroups.ssh_sg_id]
   tags                   = local.common_tags
 }
 
 resource "null_resource" "cluster_provisioning" {
-  # Changes to any instance of the cluster requires re-provisioning
+  # Call Ansible playbooks to provision instances
   count = length(module.myec2instances.*.arn)
   provisioner "local-exec" {
-    command = "echo ${element(module.myec2instances.*.arn, count.index)}  >> provisioning.log"
+    command = "echo ${element(module.myec2instances.*.public_ip, count.index)}  >> ${var.provisioning_logs}"
   }
 }
 
-
-
 module "ec2_cluster" {
-  # Official ec2 module from Terraform public registry
-  # https://registry.terraform.io
+  # Official ec2 module: https://registry.terraform.io
+  # Only used as an example of Terraform public registry module
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "~> 2.0"
 
   name           = "my-cluster"
-  instance_count = var.use_official_module == "true" ? 1 : 0
+  instance_count = var.environment == "prod" ? 1 : 0
   ami            = data.aws_ami.app_ami.id
-  instance_type  = lookup(var.instance_type, terraform.workspace, "t2.micro")
+  instance_type  = lookup(var.instance_type, var.environment, null)
   tags           = local.common_tags
 }

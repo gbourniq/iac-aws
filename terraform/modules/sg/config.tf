@@ -3,10 +3,4 @@ terraform {
   required_providers {
     aws = "~> 2.0"
   }
-  backend "s3" {
-    region = "eu-west-2"
-    bucket = "terraform-remote-backend-gb"
-    key    = "terraform.tfstate"
-    # dynamodb_table = "s3-state-lock"
-  }
 }

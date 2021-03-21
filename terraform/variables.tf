@@ -1,9 +1,15 @@
-variable "use_official_module" {
-  type        = bool
-  description = "placeholder"
-  default     = false
+# General
+variable "provisioning_logs" {
+  description = "Local path to the provisioning logs file."
+  type        = string
+  default     = null
 }
 
+variable "tag_name" {
+  description = "Name to tag aws resources with."
+  type        = string
+  default     = null
+}
 
 # EC2
 variable "instance_count" {
@@ -56,3 +62,4 @@ variable "vpn_ip" {
   description = "your IP address for ssh access"
   default     = null
 }
+

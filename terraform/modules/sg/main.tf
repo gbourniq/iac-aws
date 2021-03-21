@@ -1,6 +1,6 @@
-resource "aws_security_group" "dynamicsg" {
+resource "aws_security_group" "dynamic_sg" {
   name        = "dynamic-sg"
-  description = "Ingress for Vault"
+  description = "Allowed ingress ports"
   dynamic "ingress" {
     for_each = var.sg_ports
     iterator = port
@@ -11,6 +11,12 @@ resource "aws_security_group" "dynamicsg" {
       cidr_blocks = ["0.0.0.0/0"]
     }
   }
+  tags = var.tags
+}
+
+resource "aws_security_group" "ssh_sg" {
+  name        = "ssh-sg"
+  description = "SSH access"
   ingress {
     description = "SSH access"
     from_port   = 22
@@ -18,13 +24,5 @@ resource "aws_security_group" "dynamicsg" {
     protocol    = "tcp"
     cidr_blocks = [var.vpn_ip]
   }
-  egress {
-    description = "Outbound Allowed"
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = var.tags
 }

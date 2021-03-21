@@ -7,7 +7,7 @@ variable "sg_ports" {
 variable "vpn_ip" {
   type        = string
   description = "your IP address for ssh access"
-  default     = null
+  default     = ""
 }
 
 variable "tags" {
