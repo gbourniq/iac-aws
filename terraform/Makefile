@@ -1,49 +1,41 @@
 # Set shell
 SHELL=/bin/bash -e -o pipefail
 
-# Cloudformation
-
 .PHONY: up down lint
+	
+apply:
+	terraform init
+	terraform fmt -recursive
+	terraform validate
+	terraform plan -out=./.terraform/terraform_plan
+	terraform apply ./.terraform/terraform_plan
 
-up:
-	@ bash ./cloudformation/scripts/create-stack.sh
+graph:
+	terraform graph > ./terraform/graph.dot
+	cat graph.dot | dot -Tsvg > ./terraform/graph.svg
+	open -a "Google Chrome" ./terraform/graph.svg
 
-down:
-	@ bash ./cloudformation/scripts/delete-stack.sh
-
-lint:
-	@ bash ./cloudformation/scripts/lint-cfn-template.sh
+state-list:
+	terraform state list
 
 
-# Terraform
+# ### Other Terraform commands
+# terraform destroy --auto-approve
 
-terraform init
-terraform fmt -recursive
-terraform validate
-terraform plan
-terraform apply
-terraform graph > graph.dot
-cat graph.dot | dot -Tsvg > graph.svg
-open graph.svg
+# ### Commands used for State Management
+# terraform state show aws_instance.myec2
+# terraform state list
+# terraform state mv aws_instance.webapp aws_instance.myec2
+# terraform state pull | jq []
+# terraform state rm aws_instance.myec2
 
-# for using with scripts:
-terraform plan -out=demopath
-terraform apply demopath
+# ### Terraform Workspace commands
+# terraform workspace -h
+# terraform workspace show
+# terraform workspace new dev
+# terraform workspace new prd
+# terraform workspace list
+# terraform workspace select dev
 
-# Commands used for State Management
-terraform state show aws_instance.myec2
-terraform state list
-terraform state mv aws_instance.webapp aws_instance.myec2
-terraform state pull | jq []
-terraform state rm aws_instance.myec2
-
-### Terraform Workspace commands
-terraform workspace -h
-terraform workspace show
-terraform workspace new dev
-terraform workspace new prd
-terraform workspace list
-terraform workspace select dev
-
-# Test Terraform functions via the console
-terraform console
+# # Test Terraform functions via the console
+# terraform console

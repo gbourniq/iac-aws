@@ -52,15 +52,15 @@ resource "null_resource" "cluster_provisioning" {
   }
 }
 
-module "ec2_cluster" {
-  # Official ec2 module: https://registry.terraform.io
-  # Only used as an example of Terraform public registry module
-  source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "~> 2.0"
-
-  name           = "my-cluster"
-  instance_count = var.environment == "prod" ? 1 : 0
-  ami            = data.aws_ami.app_ami.id
-  instance_type  = lookup(var.instance_type, var.environment, null)
-  tags           = local.common_tags
-}
+# module "ec2_cluster" {
+#  # Official ec2 module: https://registry.terraform.io
+#  # Only used as an example of Terraform public registry module
+#  source  = "terraform-aws-modules/ec2-instance/aws"
+#  version = "~> 2.0"
+#
+#  name           = "my-cluster"
+#  instance_count = var.environment == "prod" ? 1 : 0
+#  ami            = data.aws_ami.app_ami.id
+#  instance_type  = lookup(var.instance_type, var.environment, null)
+#  tags           = local.common_tags
+#}

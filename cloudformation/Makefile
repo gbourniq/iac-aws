@@ -1,8 +1,6 @@
 # Set shell
 SHELL=/bin/bash -e -o pipefail
 
-# Cloudformation
-
 .PHONY: up down lint
 
 up:
