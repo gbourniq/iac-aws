@@ -22,7 +22,14 @@ locals {
   }
 }
 
-module "myec2instance" {
+module "aws_security_group" {
+  source   = "./modules/sg"
+  sg_ports = var.sg_ports
+  tags     = local.common_tags
+  vpn_ip   = var.vpn_ip
+}
+
+module "myec2instances" {
   source                 = "./modules/ec2"
   count                  = var.instance_count
   ami                    = data.aws_ami.app_ami.id
@@ -33,15 +40,19 @@ module "myec2instance" {
   tags                   = local.common_tags
 }
 
-module "aws_security_group" {
-  source   = "./modules/sg"
-  sg_ports = var.sg_ports
-  tags     = local.common_tags
-  vpn_ip   = var.vpn_ip
+resource "null_resource" "cluster_provisioning" {
+  # Changes to any instance of the cluster requires re-provisioning
+  count = length(module.myec2instances.*.arn)
+  provisioner "local-exec" {
+    command = "echo ${element(module.myec2instances.*.arn, count.index)}  >> provisioning.log"
+  }
 }
 
-# Official ec2 module from Terraform public registry
+
+
 module "ec2_cluster" {
+  # Official ec2 module from Terraform public registry
+  # https://registry.terraform.io
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "~> 2.0"
 

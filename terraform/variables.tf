@@ -44,11 +44,6 @@ variable "iam_instance_profile" {
   default     = ""
 }
 
-# variable "github_ssh_key_file" {
-#   type = string
-# }
-
-
 # Security Groups
 variable "sg_ports" {
   type        = list(number)

@@ -5,7 +5,4 @@ resource "aws_instance" "myec2" {
   iam_instance_profile   = var.iam_instance_profile
   vpc_security_group_ids = var.vpc_security_group_ids
   tags                   = var.tags
-  provisioner "local-exec" {
-    command = var.local_command
-  }
 }
