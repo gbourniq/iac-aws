@@ -11,9 +11,9 @@ apply:
 	terraform apply ./.terraform/terraform_plan
 
 graph:
-	terraform graph > ./terraform/graph.dot
-	cat graph.dot | dot -Tsvg > ./terraform/graph.svg
-	open -a "Google Chrome" ./terraform/graph.svg
+	terraform graph > ./.terraform/graph.dot
+	cat ./.terraform/graph.dot | dot -Tsvg > ./.terraform/graph.svg
+	open -a "Google Chrome" ./.terraform/graph.svg
 
 state-list:
 	terraform state list
