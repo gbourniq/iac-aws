@@ -4,6 +4,7 @@
 - tflint: https://github.com/terraform-linters/tflint
 - pre-commit
 - graphviz
+- ansible
 
 ### 1. Create a terraform.tfvars file
 

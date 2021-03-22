@@ -44,11 +44,37 @@ module "myec2instances" {
   tags                   = local.common_tags
 }
 
+resource "local_file" "hosts_cfg" {
+  # Generate Ansible inventory file
+  depends_on = [
+    module.myec2instances
+  ]
+  content = templatefile("${path.module}/templates/staging_hosts.tpl",
+    {
+      public_ips = module.myec2instances.*.public_ip
+    }
+  )
+  filename = "${path.module}/../ansible/inventories/staging/hosts"
+}
+
 resource "null_resource" "cluster_provisioning" {
   # Call Ansible playbooks to provision instances
+  depends_on = [
+    local_file.hosts_cfg
+  ]
+  provisioner "local-exec" {
+    command = "echo 'running ansible playbook'; echo 'provisioning the following instances ${join("", module.myec2instances.*.public_ip)}'"
+  }
+}
+
+resource "null_resource" "logging" {
+  # Call Ansible playbooks to provision instances
+  depends_on = [
+    local_file.hosts_cfg
+  ]
   count = length(module.myec2instances.*.arn)
   provisioner "local-exec" {
-    command = "echo ${element(module.myec2instances.*.public_ip, count.index)}  >> ${var.provisioning_logs}"
+    command = "echo 'provisioned instance with public ip: ${element(module.myec2instances.*.public_ip, count.index)}'  >> ${var.provisioning_logs}"
   }
 }
 
