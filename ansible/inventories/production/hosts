@@ -1,0 +1,5 @@
+[production]
+
+[production:vars]
+ansible_ssh_private_key_file=~/.ssh/<path/to/key.pem
+ansible_user=ec2-user

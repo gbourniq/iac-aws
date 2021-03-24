@@ -19,6 +19,15 @@ state-list:
 	terraform state list
 
 
+# The terraform show command is used to provide human-readable output from a state or plan file.
+# terraform show
+
+# update the modules mentioned in the root module.
+# terraform get
+
+# extract the value of an output variable from the state file.
+# terraform output
+
 # ### Other Terraform commands
 # terraform destroy --auto-approve
 

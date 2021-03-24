@@ -1,0 +1,9 @@
+---
+docker_version: "18.06.1"
+docker_compose_version: "1.24.1"
+dockerhub_user: "{{ lookup('env','DOCKER_USER') }}"
+full_path_repositories_dir: "{{ user_path }}/repos"
+full_path_django_repo_dir: "{{ full_path_repositories_dir }}/django-on-aws"
+git_repository: "git@github.com:gbourniq/django-on-aws.git"
+user: "{{ lookup('env','DEPLOYMENT_USER') or 'ec2-user' }}"
+user_path: "/home/{{ user }}"

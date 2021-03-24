@@ -44,7 +44,7 @@ module "myec2instances" {
   tags                   = local.common_tags
 }
 
-resource "local_file" "hosts_cfg" {
+resource "local_file" "hosts_inventory_file" {
   # Generate Ansible inventory file
   depends_on = [
     module.myec2instances
@@ -58,19 +58,19 @@ resource "local_file" "hosts_cfg" {
 }
 
 resource "null_resource" "cluster_provisioning" {
-  # Call Ansible playbooks to provision instances
+  # Call Ansible playbook to provision instances
   depends_on = [
-    local_file.hosts_cfg
+    local_file.hosts_inventory_file
   ]
   provisioner "local-exec" {
-    command = "echo 'running ansible playbook'; echo 'provisioning the following instances ${join("", module.myec2instances.*.public_ip)}'"
+    command = "source ../ansible/.env; ansible-playbook -i ../ansible/inventories ../ansible/staging.yaml"
   }
 }
 
 resource "null_resource" "logging" {
   # Call Ansible playbooks to provision instances
   depends_on = [
-    local_file.hosts_cfg
+    null_resource.cluster_provisioning
   ]
   count = length(module.myec2instances.*.arn)
   provisioner "local-exec" {

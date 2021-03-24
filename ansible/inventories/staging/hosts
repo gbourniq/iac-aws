@@ -1,7 +1,6 @@
 [staging]
-%{ for ip in public_ips ~}
-${ip}
-%{ endfor ~}
+3.10.21.49
+3.8.127.203
 
 [staging:vars]
 ansible_ssh_private_key_file=~/.ssh/terraform_login_key.pem

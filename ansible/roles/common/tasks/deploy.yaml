@@ -1,0 +1,61 @@
+---
+
+- name: Check if previous installation exists
+  stat:
+    path: "{{ full_path_repositories_dir }}"
+  register: prev_inst_dir
+
+- name: Delete a previous installation directory
+  file:
+    path: "{{ full_path_repositories_dir }}"
+    state: absent
+  when: prev_inst_dir.stat.isdir is defined and prev_inst_dir.stat.isdir
+
+- name: Create install directories (if they do not exist) and change ownership
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  loop:
+    - "{{ full_path_repositories_dir }}"
+
+- name: Copy github ssh keys to remote host
+  copy: 
+    src: /Users/guillaume.bournique/.ssh/{{ item }}
+    dest: "{{ user_path }}/.ssh/{{ item }}" 
+    mode: 0400
+  loop:
+    - "id_rsa.pub"
+    - "id_rsa"
+
+- name: Clone the code django repository
+  git:
+    repo: "{{ git_repository }}"
+    dest: "{{ full_path_django_repo_dir }}"
+    accept_hostkey: yes
+    key_file: "{{ user_path }}/.ssh/id_rsa"
+    update: no
+
+- name: Remove github ssh keys from remote host
+  file:
+    path: "{{ user_path }}/.ssh/{{ item }}" 
+    state: absent
+  loop:
+    - "id_rsa.pub"
+    - "id_rsa"
+
+- name: Rename conda environment name in environment.yml
+  lineinfile:
+    path: "{{ full_path_django_repo_dir }}/environment.yml"
+    regexp: '^name:\s'
+    line: "name: {{ ansible_host }}"
+
+# - name: docker-compose up
+#   docker_compose:
+#     project_src: "{{ full_path_django_repo_dir }}/"
+#     pull: yes
+#     state: present
+
+# etc.
