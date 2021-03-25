@@ -17,34 +17,3 @@ graph:
 
 state-list:
 	terraform state list
-
-
-# The terraform show command is used to provide human-readable output from a state or plan file.
-# terraform show
-
-# update the modules mentioned in the root module.
-# terraform get
-
-# extract the value of an output variable from the state file.
-# terraform output
-
-# ### Other Terraform commands
-# terraform destroy --auto-approve
-
-# ### Commands used for State Management
-# terraform state show aws_instance.myec2
-# terraform state list
-# terraform state mv aws_instance.webapp aws_instance.myec2
-# terraform state pull | jq []
-# terraform state rm aws_instance.myec2
-
-# ### Terraform Workspace commands
-# terraform workspace -h
-# terraform workspace show
-# terraform workspace new dev
-# terraform workspace new prd
-# terraform workspace list
-# terraform workspace select dev
-
-# # Test Terraform functions via the console
-# terraform console

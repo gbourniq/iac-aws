@@ -63,7 +63,7 @@ resource "null_resource" "cluster_provisioning" {
     local_file.hosts_inventory_file
   ]
   provisioner "local-exec" {
-    command = "source ../ansible/.env; ansible-playbook -i ../ansible/inventories ../ansible/staging.yaml"
+    command = "source ../ansible/.env; ansible-playbook -i ../ansible/inventories ../ansible/staging.yaml --timeout 60"
   }
 }
 
