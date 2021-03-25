@@ -67,22 +67,3 @@ A `Makefile` is available to easily create and delete a stack.
 |`make up`                     | Create the stack and poll for completion status                              |
 |`make down`                   | Delete the stack and poll for deletion status                                |
 |`make lint`                   | Lint the cloudformation template with `yamllint` and `cfn-lint`              |
-
-
-## Personal Notes
-
-Things to keep in mind for further template development:
-* Use CF intrinsic functions etc: !GetAtt, FindInMap, ImportValue, Join, Sub, Conditions
-* Use Nested Stacks (only update/delete the parent template - child templates must be on S3?)
-* or Cross Stack (multiple templates too) with Export/Import values to link templates. eg. network_cfn.yml to create VPC/etc and export VPC/Subnet IDs - look at the Outputs tab in the console
-* In the console, use ChangeSets instead of Update Stack, to review changes
-* use DeletionPolicy (eg. Retain for SGs / Snapshot for DBs)
-* with conditions (eg. if tag: Env=prod for Prod instances: use TerminationProtection, if dev -> don't create this, etc.)
-* Use DependsOn for DBs
-* Deploy inline lambda function (< 5000 chars, no dependency) vs. deploy big lambda function via a .zip uploaded on S3, using the S3ObjectVersion (find Version ID from S3 object), so that replacing the zip file in S3 will allow an update of the cfn stack
-* Custom resource with Lambda: eg inline `lambda-empty-s3.yml`, which is needed when non-empty buckets needs to be deleted by cfn
-* Drift detection to check if stack resources were modified manually
-* cfn-hup to update cfn-init stuff without recreating resource.
-* It checks every X mins if the cfn-init has changed, if so, run the cfn-auto-reloader.conf
-* Useful for eg. to use a different cloud_watch_config.jon file: When updating the stack with a different path value, cfn-hup will tell that the stack init metadata / ec2 state has changed and will update the instance without recreating it. Can check cfn metadata with /opt/aws/bin/cfn-get-metadata
-* stack policies (.json) to prevent stack resources from updated with new template parameters (eg. deny update on security groups/DB)
