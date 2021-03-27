@@ -1,8 +1,8 @@
 ---
 
-- import_tasks: prep.yaml
-- import_tasks: install_poetry.yaml
-- import_tasks: install_docker.yaml
-- import_tasks: install_docker_compose.yaml
-- import_tasks: config_docker.yaml
-- import_tasks: deploy.yaml
+- import_tasks: 1_install_packages.yaml
+- import_tasks: 2_install_poetry.yaml
+- import_tasks: 3_install_docker.yaml
+- import_tasks: 4_install_docker_compose.yaml
+- import_tasks: 5_config_docker.yaml
+- import_tasks: 6_deploy.yaml

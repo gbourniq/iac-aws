@@ -56,7 +56,6 @@
 - name: Check packages are installed
   become_user: ec2-user
   shell: |
-    echo "$(whoami)"
     poetry --version
     docker --version
     docker-compose --version
