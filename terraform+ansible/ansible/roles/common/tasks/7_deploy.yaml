@@ -38,6 +38,12 @@
     key_file: "{{ user_path }}/.ssh/id_rsa"
     update: no
 
+- name: Checkout to branch {{ git_branch_name }}
+  command: git checkout {{ git_branch_name }}
+  ignore_errors: yes
+  args:
+    chdir: "{{ full_path_django_repo_dir }}"
+
 - name: Remove github ssh keys from remote host
   file:
     path: "{{ user_path }}/.ssh/{{ item }}" 
@@ -46,21 +52,12 @@
     - "id_rsa.pub"
     - "id_rsa"
 
-# - name: Rename conda environment name in environment.yml
-#   lineinfile:
-#     path: "{{ full_path_django_repo_dir }}/environment.yml"
-#     regexp: '^name:\s'
-#     line: "name: {{ ansible_host }}"
-    # git checkout {{ git_branch_name }}
-
 - name: Check packages are installed
   become_user: ec2-user
   shell: |
     poetry --version
     docker --version
     docker-compose --version
-  args:
-    chdir: "{{ full_path_django_repo_dir }}"
 
 - name: Start postgres and redis databases
   become_user: ec2-user
