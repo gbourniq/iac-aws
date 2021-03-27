@@ -1,0 +1,19 @@
+---
+
+- name: Fetch poetry installer
+  become_user: ec2-user
+  get_url:
+    url: https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py
+    dest: "{{ user_path }}"
+
+- name: Install Poetry v{{ poetry_version }}
+  become_user: ec2-user
+  command: python {{ user_path }}/get-poetry.py --version {{ poetry_version }} -y
+
+- name: Add Poetry binaries directory to your PATH in .bashrc for {{ ansible_distribution }} distribution
+  become_user: ec2-user
+  shell: echo 'export PATH="$HOME/.poetry/bin:$PATH"' | cat >> {{ linux_shell_profile_name }}
+
+- name: Set Poetry config virtualenvs to False
+  become_user: ec2-user
+  command: "{{ user_path }}/.poetry/bin/poetry config virtualenvs.create false"

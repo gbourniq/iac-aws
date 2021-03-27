@@ -54,7 +54,7 @@ variable "iam_instance_profile" {
 variable "sg_ports" {
   type        = list(number)
   description = "list of ingress ports"
-  default     = [80, 443]
+  default     = [80, 443, 8080]
 }
 
 variable "vpn_ip" {

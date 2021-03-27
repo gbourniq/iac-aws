@@ -46,16 +46,31 @@
     - "id_rsa.pub"
     - "id_rsa"
 
-- name: Rename conda environment name in environment.yml
-  lineinfile:
-    path: "{{ full_path_django_repo_dir }}/environment.yml"
-    regexp: '^name:\s'
-    line: "name: {{ ansible_host }}"
+# - name: Rename conda environment name in environment.yml
+#   lineinfile:
+#     path: "{{ full_path_django_repo_dir }}/environment.yml"
+#     regexp: '^name:\s'
+#     line: "name: {{ ansible_host }}"
+    # git checkout {{ git_branch_name }}
 
-# - name: docker-compose up
-#   docker_compose:
-#     project_src: "{{ full_path_django_repo_dir }}/"
-#     pull: yes
-#     state: present
+- name: Check packages are installed
+  become_user: ec2-user
+  shell: |
+    echo "$(whoami)"
+    poetry --version
+    docker --version
+    docker-compose --version
+  args:
+    chdir: "{{ full_path_django_repo_dir }}"
 
-# etc.
+- name: Start postgres and redis databases
+  become_user: ec2-user
+  command: make rundb
+  args:
+    chdir: "{{ full_path_django_repo_dir }}"
+
+- name: Start django application
+  become_user: ec2-user
+  command: make up
+  args:
+    chdir: "{{ full_path_django_repo_dir }}"
